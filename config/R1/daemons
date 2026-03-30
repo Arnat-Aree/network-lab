@@ -1,0 +1,10 @@
+bgpd=no
+ospfd=yes
+ospf6d=no
+ripd=no
+ripngd=no
+isisd=no
+fabricd=no
+vrrpd=no
+zebra=yes
+staticd=yes

@@ -1,0 +1,148 @@
+networks:
+  internet_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          gateway: 172.30.0.254
+  isp_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/29
+          gateway: 172.31.0.6
+  lan_a_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.10.0/24
+          gateway: 172.20.10.254
+  lan_b_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.20.0/24
+          gateway: 172.20.20.254
+
+services:
+  R1:
+    image: networklab6/r1:latest
+    build:
+      context: ./automation/R1
+      dockerfile: Dockerfile
+    container_name: R1
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    dns:
+      - 8.8.8.8
+    environment:
+      - HTTP_PROXY=http://host.docker.internal:3128
+      - HTTPS_PROXY=http://host.docker.internal:3128
+      - NO_PROXY=127.0.0.1,localhost,172.20.0.0/16,172.31.0.0/24,172.30.0.0/24
+    networks:
+      internet_net:
+        ipv4_address: 172.30.0.2
+      isp_net:
+        ipv4_address: 172.31.0.1
+      lan_a_net:
+        ipv4_address: 172.20.10.1
+    volumes:
+      - ./automation/R1:/automation
+    command: /bin/sh -c "sh /automation/init.sh && tail -f /dev/null"
+
+  R2:
+    image: networklab6/r2:latest
+    build:
+      context: ./automation/R2
+      dockerfile: Dockerfile
+    container_name: R2
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    dns:
+      - 8.8.8.8
+    environment:
+      - HTTP_PROXY=http://host.docker.internal:3128
+      - HTTPS_PROXY=http://host.docker.internal:3128
+      - NO_PROXY=127.0.0.1,localhost,172.20.0.0/16,172.31.0.0/24,172.30.0.0/24
+    networks:
+      isp_net:
+        ipv4_address: 172.31.0.2
+      lan_b_net:
+        ipv4_address: 172.20.20.1
+    volumes:
+      - ./automation/R2:/automation
+    command: /bin/sh -c "sh /automation/init.sh && tail -f /dev/null"
+
+  ServerA:
+    image: python:3.11-alpine
+    container_name: ServerA
+    cap_add:
+      - NET_ADMIN
+    networks:
+      lan_a_net:
+        ipv4_address: 172.20.10.10
+    dns:
+      - 8.8.8.8
+    environment:
+      - HTTP_PROXY=http://host.docker.internal:3128
+      - HTTPS_PROXY=http://host.docker.internal:3128
+      - NO_PROXY=127.0.0.1,localhost,172.20.0.0/16,172.31.0.0/24,172.30.0.0/24
+    volumes:
+      - ./automation/ServerA:/automation
+    command: /bin/sh -c "sleep 5 && ip route replace default via 172.20.10.1 && python /automation/start_services.py"
+
+  ServerB:
+    image: python:3.11-alpine
+    container_name: ServerB
+    cap_add:
+      - NET_ADMIN
+    networks:
+      lan_b_net:
+        ipv4_address: 172.20.20.10
+    dns:
+      - 8.8.8.8
+    environment:
+      - HTTP_PROXY=http://host.docker.internal:3128
+      - HTTPS_PROXY=http://host.docker.internal:3128
+      - NO_PROXY=127.0.0.1,localhost,172.20.0.0/16,172.31.0.0/24,172.30.0.0/24
+    volumes:
+      - ./automation/ServerB:/automation
+    command: /bin/sh -c "sleep 5 && ip route replace default via 172.20.20.1 && python /automation/start_services.py"
+
+  ClientA:
+    image: alpine:latest
+    container_name: ClientA
+    cap_add:
+      - NET_ADMIN
+    dns:
+      - 8.8.8.8
+    environment:
+      - HTTP_PROXY=http://host.docker.internal:3128
+      - HTTPS_PROXY=http://host.docker.internal:3128
+      - NO_PROXY=127.0.0.1,localhost,172.20.0.0/16,172.31.0.0/24,172.30.0.0/24
+    networks:
+      lan_a_net:
+        ipv4_address: 172.20.10.50
+    command: /bin/sh -c "apk add --no-cache curl && ip route replace default via 172.20.10.1 && tail -f /dev/null"
+
+  InternetTester:
+    image: alpine:latest
+    container_name: InternetTester
+    cap_add:
+      - NET_ADMIN
+    dns:
+      - 8.8.8.8
+    environment:
+      - http_proxy=
+      - https_proxy=
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - no_proxy="*"
+    networks:
+      internet_net:
+        ipv4_address: 172.30.0.100
+    command: /bin/sh -c "apk add --no-cache curl && tail -f /dev/null"
