@@ -1,94 +1,120 @@
 # Lab 6 Network Infrastructure Setup 
 *(การตั้งค่าโครงสร้างพื้นฐานเครือข่ายสำหรับ Lab 6)*
 
-This project simulates a complete, multi-container enterprise network infrastructure using Docker and FRRouting (FRR). It demonstrates dynamic routing (OSPF), Network Address Translation (NAT), High Availability / Link monitoring (IP SLA), and containerized network segmentation.
-*(โปรเจกต์นี้เป็นการจำลองโครงสร้างพื้นฐานเครือข่ายระดับองค์กรแบบครบวงจรโดยใช้ Docker และ FRRouting (FRR) ซึ่งจะสาธิตการทำงานของระบบหาเส้นทางแบบไดนามิก (OSPF), การทำ NAT, การตรวจสอบสถานะการเชื่อมต่อ (IP SLA) และการแบ่งสัดส่วนและจัดเตรียมเครือข่าย)*
+โปรเจกต์นี้เป็นการจำลองโครงสร้างพื้นฐานเครือข่ายระดับองค์กรแบบครบวงจรโดยใช้ Docker และ FRRouting (FRR) ซึ่งจะสาธิตการทำงานของระบบหาเส้นทางแบบไดนามิก (OSPF), การทำ NAT, การตรวจสอบสถานะการเชื่อมต่อ (IP SLA) และการแบ่งสัดส่วนและจัดเตรียมเครือข่าย
 
 ---
 
-## 🏗 Network Topology (โครงสร้างเครือข่าย)
+## 🏗 Network Architecture
 
-The lab consists of 4 distinct IP networks and 6 Docker containers:
-*(แลปนี้ประกอบไปด้วยวงเน็ตเวิร์ค 4 วง และ Docker Container จำนวน 6 ตัวดังนี้)*
+แลปนี้ประกอบไปด้วยวงเน็ตเวิร์ค 4 วง และ Docker Container จำนวน 6 ตัวดังนี้
 
-### Networks (วงเครือข่าย)
-- **`internet_net`** (`172.30.0.0/24`): Simulates the external Internet network. *(จำลองเครือข่ายอินเทอร์เน็ตภายนอก)*
-- **`isp_net`** (`172.31.0.0/29`): The point-to-point network connecting Router 1 to Router 2. *(เครือข่ายที่เชื่อมต่อกันระหว่าง R1 และ R2)*
-- **`lan_a_net`** (`172.20.10.0/24`): Internal LAN A. *(เครือข่ายแลนภายใน A)*
-- **`lan_b_net`** (`172.20.20.0/24`): Internal LAN B. *(เครือข่ายแลนภายใน B)*
+```text
+       [ Internet (172.30.0.0/24) ]
+                    |
+            [ InternetTester ]
+                    |
+       [ R1 (Edge Router + NAT + FW) ]
+         /                     \
+[ LAN A (172.20.10.0/24) ]   [ ISP Network (172.31.0.0/29) ]
+         |                                 |
+   +-----+-----+                 [ R2 (Internal Router) ]
+   |           |                           |
+[ClientA] [ServerA]              [ LAN B (172.20.20.0/24) ]
+                                           |
+                                      [ ServerB ]
+```
 
-### Nodes / Containers (คุณสมบัติของแต่ละ Container)
+### Networks
+- **`internet_net`** (`172.30.0.0/24`): จำลองเครือข่ายอินเทอร์เน็ตภายนอก
+- **`isp_net`** (`172.31.0.0/29`): เครือข่ายเชื่อมต่อภายในแบบจุดต่อจุดระหว่าง R1 และ R2
+- **`lan_a_net`** (`172.20.10.0/24`): เครือข่ายแลนภายใน A
+- **`lan_b_net`** (`172.20.20.0/24`): เครือข่ายแลนภายใน B
+
+### Nodes / Containers
 1. **R1 (Gateway Router)**
-   - Acts as the main gateway to the Internet. *(ทำหน้าที่เป็น Gateway หลักสำหรับออกอินเทอร์เน็ต)*
-   - Performs NAT (Masquerade) to allow internal hosts to reach the simulated internet. *(ทำ NAT เพื่อให้เครื่องในวง LAN ออกเน็ตได้)*
-   - Runs OSPF via FRRouting to exchange routes with R2. *(ใช้โปรโตคอล OSPF ร่วมกับ R2)*
+   - ทำหน้าที่เป็น Gateway หลักสำหรับออกอินเทอร์เน็ต
+   - ทำ NAT เพื่อให้เครื่องในวง LAN ออกเน็ตได้
+   - ประมวลผลและแลกเปลี่ยนเส้นทางด้วยโปรโตคอล OSPF ร่วมกับ R2
 2. **R2 (Internal Branch Router)**
-   - Internal router that connects LAN B to the rest of the network via R1. *(เราเตอร์สาขา ทำหน้าที่เชื่อม LAN B ให้คุยกับวงอื่นและออกเน็ตผ่าน R1 ได้)*
-   - Runs OSPF via FRR. *(รัน OSPF)*
+   - เราเตอร์สาขา ทำหน้าที่เชื่อม LAN B ให้คุยกับวงอื่นและออกเน็ตผ่าน R1 ได้
+   - รัน OSPF เพื่ออัปเดตเส้นทาง
 3. **ServerA**
-   - Python-based server inside LAN A. *(เซิร์ฟเวอร์ภาษา Python ในวง LAN A)*
+   - เซิร์ฟเวอร์ในวง LAN A
 4. **ServerB**
-   - Python-based server inside LAN B. *(เซิร์ฟเวอร์ภาษา Python ในวง LAN B)*
+   - เซิร์ฟเวอร์ในวง LAN B
 5. **ClientA**
-   - Simulated client machine in LAN A with networking tools pre-installed. *(เครื่องลูกข่ายสำหรับทดสอบในวง LAN A)*
+   - เครื่องลูกข่ายสำหรับทดสอบในวง LAN A
 6. **InternetTester**
-   - Container sitting on the Internet network used to verify external connectivity. *(เครื่องที่จำลองเป็นเซิร์ฟเวอร์ปลายทางบนโลกอินเทอร์เน็ต)*
+   - เครื่องตัวแทนเซิร์ฟเวอร์ปลายทางบนโลกอินเทอร์เน็ต เพื่อใช้ทดสอบการออกเน็ต
 
 ---
 
-## ✨ Features Implemented (ฟีเจอร์หลัก)
+## ✨ Features Implemented
 
-- **Dynamic Routing (OSPF):** R1 and R2 use FRRouting (`frr.conf`) to dynamically advertise LAN A and LAN B routes. *(R1 และ R2 แลกเปลี่ยนเส้นทางกันได้อัตโนมัติ ไม่ต้องคอยเซ็ต Static Route เอง)*
-- **NAT / Firewall:** Configured on R1 via `iptables` to translate LAN traffic. *(ตั้งค่าการแปลงไอพีและการกรองเส้นทางผ่าน iptables ไว้ที่ R1)*
-- **IP SLA / Failover Monitoring:** Custom shell scripts (`ip_sla.sh`) are used to automatically detect interface or path failures and reroute traffic dynamically. *(มีสคริปต์ตรวจสอบความพร้อมของเส้นทาง หากเส้นทางไหนมีปัญหาก็จะปรับเปลี่ยนให้เอง)*
-- **Automated Container Provisioning:** Uses custom `Dockerfile` builds and startup scripts to assign default routes. *(กำหนด Default Route ประจำคอนเทนเนอร์ให้อัตโนมัติเมื่อตอนสั่งรันด้วย Script)*
+- **Dynamic Routing (OSPF):** R1 และ R2 แลกเปลี่ยนเส้นทางกันได้อัตโนมัติผ่าน FRRouting (`frr.conf`) ไม่ต้องคอยเซ็ต Static Route เอง
+- **NAT / Firewall:** ตั้งค่าการแปลงไอพีและการกรองเส้นทางสำหรับทราฟฟิกในวง LAN ผ่าน `iptables` ไว้ที่ R1
+- **IP SLA / Failover Monitoring:** มีสคริปต์เช็คความพร้อมการเชื่อมต่อ หากเส้นทางไหนมีปัญหาจะปรับพฤติกรรมเราติ้งให้เองแบบอัตโนมัติ (`ip_sla.sh`)
+- **Automated Container Provisioning:** ใช้ `Dockerfile` และสคริปต์คอนฟิกเริ่มต้นเพื่อกำหนด Default Route และรันการตั้งค่าประจำคอนเทนเนอร์ให้อัตโนมัติเมื่อสั่งรัน
 
 ---
 
-## 🚀 How to Run (วิธีเริ่มรันระบบ)
+## 🚀 How to Run
 
-1. Ensure you have Docker and Docker Compose installed. *(เช็คให้แน่ใจว่าติดตั้ง Docker และ Docker Compose ในเครื่องเรียบร้อยแล้ว)*
-2. Clone the repository and navigate to the project directory: *(จำลองการโคลนโปรเจกต์ลงเครื่อง)*
+1. เช็คให้แน่ใจว่าติดตั้ง Docker และ Docker Compose ในเครื่องเรียบร้อยแล้ว
+2. โคลนและเข้าไปยังโฟลเดอร์โปรเจกต์:
    ```bash
    git clone <repository_url>
    cd network-lab
    ```
-3. Build and start the infrastructure: *(เริ่มรันตัวคอนเทนเนอร์และเซตอัพโครงสร้าง)*
+3. เริ่มสร้างตัวคอนเทนเนอร์และเซตอัพโครงสร้างระบบ:
    ```bash
    docker-compose up -d --build
    ```
-4. Verify the containers are running: *(เช็คสถานะการทำงาน)*
+4. เช็คความพร้อมว่าคอนเทนเนอร์ทำงานครบทั้ง 6 ตัว:
    ```bash
    docker ps
    ```
 
 ---
 
-## 🧪 Testing the Infrastructure (ชุดคำสั่งทดสอบแลป)
+## 🧪 Testing the Infrastructure
 
-You can verify the connectivity by accessing the containers using `docker exec`:
-*(หลังจากรันระบบเสร็จ สามารถก๊อปคำสั่งเหล่านี้ไปวางทดสอบการแชร์ของวงเครือข่ายและระบบ)*
+หลังจากรันระบบเสร็จ สามารถใช้คำสั่งเหล่านี้เพื่อทดสอบการสื่อสารของเครือข่าย
 
 **1. Test OSPF Routing (LAN A to LAN B):**
-ตรวจสอบการสื่อสารแบบข้าม LAN ถ้าระบบ OSPF ทำงาน Client A จะต้องมองเห็น Server B ได้
+ตรวจสอบการสื่อสารข้าม LAN ถ้าระบบ OSPF ทำงาน Client A (172.20.10.50) จะต้องปิงเจอ Server B (172.20.20.10) ได้
 ```bash
 docker exec -it ClientA ping 172.20.20.10
 ```
 
 **2. Test NAT and Internet Access:**
-Ping จากเครื่องลูกในวง LAN ออกไปสู่โลกอินเทอร์เน็ตภายนอก (ผ่าน R1NAT)
+ทดสอบปิงจากวง LAN ออกไปสู่โลกอินเทอร์เน็ตภายนอก (ผ่าน R1)
 ```bash
 docker exec -it ClientA ping 172.30.0.100
 ```
 
 **3. Check FRR Routing Tables on R1:**
-ส่องดูตารางแสดงการค้นหาเส้นทางแบบอัตโนมัติบนตัวเราเตอร์หลัก (มองหาสัญลักษณ์ O ที่ย่อมาจาก OSPF)
+ส่องดูตารางค้นหาเส้นทางแบบอัตโนมัติบน R1 (มองหารูทที่นำหน้าด้วย `O` ซึ่งย่อมาจาก OSPF)
 ```bash
 docker exec -it R1 vtysh -c "show ip route"
 ```
 
-## 📁 Project Structure (คำอธิบายโครงสร้างไฟล์)
+---
 
-- `/automation/`: Contains custom Dockerfiles, initialization scripts (`init.sh`), IP SLA health monitor scripts. *(เป็นที่เก็บโค้ดตั้งค่าและสคริปต์รันระบบพื้นฐาน)*
-- `/config/`: Contains the FRR configuration files (`frr.conf`, `daemons`, `vtysh.conf`). *(โฟลเดอร์เก็บค่าคอนฟิกของเราเตอร์ R1 และ R2)*
-- `docker-compose.yml`: The blueprint defining the networks, subnets, and container properties. *(ไฟล์หลักที่ใช้ระบุโครงสร้างการเชื่อมต่อทั้งหมดประหนึ่งสายแลนสมมติ)*
+## 📁 Project Structure
+
+```text
+.
+├── automation/                 # แหล่งจัดเก็บสคริปต์และคอนฟิกเริ่มต้นของอุปกรณ์
+│   ├── ClientA/                # สคริปต์และการตั้งค่าสำหรับเครื่อง ClientA
+│   ├── R1/                     # สคริปต์เริ่มต้นระบบ ปรับแต่งเส้นทาง Router 1
+│   ├── R2/                     # สคริปต์เริ่มต้นระบบ ปรับแต่งเส้นทาง Router 2
+│   ├── ServerA/                # สคริปต์สำหรับเริ่มต้น Service เครื่อง ServerA
+│   └── ServerB/                # สคริปต์สำหรับเริ่มต้น Service เครื่อง ServerB
+├── config/                     # โฟลเดอร์เก็บค่าคอนฟิกของเราเตอร์
+│   ├── R1/                     # คอนฟิกการทำงาน FRRouting และ OSPF ของ Router 1
+│   └── R2/                     # คอนฟิกการทำงาน FRRouting และ OSPF ของ Router 2
+├── docker-compose.yml          # ไฟล์หลักที่ใช้ระบุโครงสร้างการเชื่อมต่อเครือข่ายทั้งหมด
+└── README.md                   # เอกสารอธิบายโปรเจกต์
+```
