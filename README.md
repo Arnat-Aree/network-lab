@@ -64,7 +64,7 @@
 1. เช็คให้แน่ใจว่าติดตั้ง Docker และ Docker Compose ในเครื่องเรียบร้อยแล้ว
 2. โคลนและเข้าไปยังโฟลเดอร์โปรเจกต์:
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/Arnat-Aree/network-lab.git
    cd network-lab
    ```
 3. เริ่มสร้างตัวคอนเทนเนอร์และเซตอัพโครงสร้างระบบ:
