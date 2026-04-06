@@ -1,0 +1,57 @@
+# Lab 7 — Docker Compose (Placeholder)
+# TODO: ออกแบบ Topology ใหม่พร้อม Dual ISP, R3, DMZ, Load Balancer
+
+networks:
+  # === ISP 1 (Primary Internet) ===
+  isp1_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          gateway: 172.30.0.254
+
+  # === ISP 2 (Secondary Internet) ===
+  isp2_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.1.0/24
+          gateway: 172.30.1.254
+
+  # === WAN between routers ===
+  wan_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/29
+          gateway: 172.31.0.6
+
+  # === DMZ Zone (Public-facing servers) ===
+  dmz_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.30.0/24
+          gateway: 172.20.30.254
+
+  # === LAN A (Internal clients) ===
+  lan_a_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.10.0/24
+          gateway: 172.20.10.254
+
+  # === LAN B (Internal servers) ===
+  lan_b_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.20.0/24
+          gateway: 172.20.20.254
+
+services:
+  # TODO: Add R1, R2, R3, LoadBalancer, ServerA, ServerB, ClientA, Redis, PostgreSQL, Logging
+  placeholder:
+    image: alpine:latest
+    command: echo "Lab 7 placeholder — replace with actual services"
