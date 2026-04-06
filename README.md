@@ -9,7 +9,7 @@
 | Lab | หัวข้อ | รายละเอียด | สถานะ |
 |-----|--------|------------|-------|
 | [Lab 6](./lab6/) | Resilient Internet + Secure Microservices | OSPF, NAT, IP SLA, Firewall, Microservice Exposure | ✅ เสร็จ |
-| [Lab 7](./lab7/) | Dual ISP, VPN, DMZ & Load Balancing | Dual ISP, HSRP, VPN, DMZ, Load Balancer, Database | 🔄 กำลังทำ |
+| [Lab 7](./lab7/) | Dual ISP, VPN, DMZ & Load Balancing | Dual ISP, HSRP, VPN, DMZ, Load Balancer, Database | ✅ เสร็จ |
 
 ---
 
