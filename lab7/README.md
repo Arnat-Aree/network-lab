@@ -6,8 +6,8 @@
 
 ---
 
-## 🚀 Why This Architecture Matters (The Enterprise Standard)
-Unlike simple application-layer setups where containers merely talk over a simulated bridge, this topology **faithfully emulates a physical Enterprise Wide Area Network (WAN)**. 
+## 🚀 Enterprise Standard Architecture
+This topology **faithfully emulates a physical Enterprise Wide Area Network (WAN)**. 
 We implemented **Layer 3 & Layer 4 protocols** natively using Alpine containers acting as physical routers. This includes **Dynamic Routing (OSPF)**, **High-Availability Gateways (VRRP)**, and **Military-Grade Encryption (IPsec)**.
 
 To marry the core network with modern DevSecOps standards, we successfully infused **Nginx Reverse Proxy Load Balancing** across a Demilitarized Zone (DMZ), stateful **Database/Cache layers**, and a pristine **Grafana + Loki Observability Stack**.

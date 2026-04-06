@@ -17,7 +17,7 @@
 
 ## 🎯 Core Objectives
 
-Many lab environments simulate network zones by simply isolating application containers inside Docker subnets and utilizing HTTP proxies. This project takes it a step further by **emulating real physical routers and routing protocols**. 
+This project is designed to **emulate real physical routers and routing protocols** within a containerized environment, establishing a comprehensive and robust network topology.
 
 | Objective | Network Engineering Approach |
 |-----------|------------------------------|
