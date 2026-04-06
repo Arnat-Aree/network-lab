@@ -325,5 +325,3 @@ S>* 0.0.0.0/0 [1/0] via 172.30.0.254, eth0
 > **ผลคะแนนรวมความพร้อมของระบบ: 🏆 8.5 / 10 (Enterprise Branch-Ready)**
 
 ---
-
-*จัดทำโดยกลุ่ม — วิชา Network Infrastructure*
