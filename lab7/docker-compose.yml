@@ -148,7 +148,7 @@ services:
     command: /bin/sh -c "sleep 5 && ip route replace default via 172.20.30.1 && python /automation/start_services.py Srv2"
 
   # ==========================================
-  # HQ LAN A Services
+  # HQ LAN A Services (Data & Observability)
   # ==========================================
   Postgres:
     image: postgres:15-alpine
@@ -182,7 +182,40 @@ services:
         ipv4_address: 172.20.10.100
     volumes:
       - ./automation/Syslog/rsyslog.conf:/etc/rsyslog.conf
-    command: /bin/sh -c "ip route replace default via 172.20.10.1 && apk add --no-cache rsyslog && rsyslogd -n"
+      - syslog_data:/var/log/central
+    command: /bin/sh -c "ip route replace default via 172.20.10.1 && apk add --no-cache rsyslog && mkdir -p /var/log/central && rsyslogd -n"
+
+  loki:
+    image: grafana/loki:2.9.1
+    container_name: loki
+    networks:
+      lan_a_net:
+        ipv4_address: 172.20.10.41
+    volumes:
+      - ./automation/Observability/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.1
+    container_name: promtail
+    networks:
+      lan_a_net:
+        ipv4_address: 172.20.10.42
+    volumes:
+      - syslog_data:/var/log/syslog
+      - ./automation/Observability/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:10.1.5
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      lan_a_net:
+        ipv4_address: 172.20.10.43
+    volumes:
+      - ./automation/Observability/grafana/provisioning:/etc/grafana/provisioning
 
   ClientA:
     image: networklab7/clienta
@@ -208,3 +241,6 @@ services:
     volumes:
       - ./automation/ServerB:/automation
     command: /bin/sh -c "sleep 5 && ip route replace default via 172.20.20.1 && python /automation/start_services.py BranchSrv"
+
+volumes:
+  syslog_data:
