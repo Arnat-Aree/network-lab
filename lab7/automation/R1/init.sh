@@ -14,8 +14,12 @@ chown frr:frr /etc/frr/frr.conf
 sleep 2
 
 ip route add default via 172.30.1.254
-ip addr add 172.20.10.1/24 dev $LAN_A_IF 2>/dev/null || true
-ip addr add 172.20.30.1/24 dev $DMZ_IF 2>/dev/null || true
+# Keepalived VRRP Configuration
+mkdir -p /etc/keepalived
+cp /automation/keepalived.conf /etc/keepalived/keepalived.conf
+sed -i "s/LAN_A_IF/$LAN_A_IF/g" /etc/keepalived/keepalived.conf
+sed -i "s/DMZ_IF/$DMZ_IF/g" /etc/keepalived/keepalived.conf
+keepalived -f /etc/keepalived/keepalived.conf --dont-fork --log-console &
 
 iptables -t nat -A POSTROUTING -o $ISP_IF -j MASQUERADE
 iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT

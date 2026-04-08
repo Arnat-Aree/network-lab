@@ -1,39 +1,108 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "loki", "name": "Loki", "version": "1.0.0" },
+    { "type": "panel", "id": "logs", "name": "Logs", "version": "" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" }
+  ],
+  "annotations": { "list": [] },
   "editable": true,
-  "fiscalYearStartMonth": 0,
+  "overwrite": true,
   "graphTooltip": 0,
-  "id": 1,
+  "id": null,
   "links": [],
   "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "loki",
-        "uid": "Loki"
+      "datasource": { "type": "loki", "uid": "DS_LOKI" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 1 },
+            { "color": "red", "value": 5 }
+          ]}
+        }, "overrides": []
       },
-      "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "🔐 IPsec Events",
+      "type": "stat",
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "DS_LOKI" },
+        "expr": "count_over_time({job=\"syslog\"} |= \"IKE\" [10m])",
+        "refId": "A"
+      }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "DS_LOKI" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 1 }
+          ]}
+        }, "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "🔄 VRRP / HA Events",
+      "type": "stat",
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "DS_LOKI" },
+        "expr": "count_over_time({job=\"syslog\"} |= \"VRRP\" [10m])",
+        "refId": "A"
+      }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "DS_LOKI" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "red", "value": 1 }
+          ]}
+        }, "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "⚠️ OSPF Topology Changes",
+      "type": "stat",
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "DS_LOKI" },
+        "expr": "count_over_time({job=\"syslog\"} |= \"ospf\" [10m])",
+        "refId": "A"
+      }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "DS_LOKI" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "red", "value": 1 }
+          ]}
+        }, "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "🚫 Firewall DROPs",
+      "type": "stat",
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "DS_LOKI" },
+        "expr": "count_over_time({job=\"syslog\"} |= \"DROP\" [10m])",
+        "refId": "A"
+      }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "DS_LOKI" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 4 },
+      "id": 5,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
@@ -42,38 +111,48 @@
         "showLabels": false,
         "showTime": true,
         "sortOrder": "Descending",
-        "wrapLogMessage": false
+        "wrapLogMessage": true
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "Loki"
-          },
-          "editorMode": "builder",
-          "expr": "{job=\"syslog\"}",
-          "queryType": "range",
-          "refId": "A"
-        }
-      ],
-      "title": "Centralized Network Logs (R1, R2, R3, VPN)",
-      "type": "logs"
+      "title": "🔐 IPsec / StrongSwan Live Logs",
+      "type": "logs",
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "DS_LOKI" },
+        "expr": "{job=\"syslog\"} |= \"IKE\"",
+        "refId": "A"
+      }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "DS_LOKI" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 14 },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "🌐 All Network Router Events",
+      "type": "logs",
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "DS_LOKI" },
+        "expr": "{job=\"syslog\"}",
+        "refId": "A"
+      }]
     }
   ],
-  "refresh": "5s",
+  "refresh": "10s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-15m",
-    "to": "now"
-  },
+  "tags": ["network", "lab7", "enterprise"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
-  "timezone": "",
-  "title": "Network Engineering - Enterprise Overview",
+  "timezone": "browser",
+  "title": "🖧 Lab 7 — Network Operations Center",
   "uid": "edeb37e9-fa66-4e50-9bc8-888e0e6bdcb9",
   "version": 1,
   "weekStart": ""

@@ -1,0 +1,125 @@
+name: 🖧 Lab 7 — Enterprise Data Center CI
+
+# ─── Triggers ─────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [main]
+    paths: ['lab7/**']           # Only run when lab7 files change
+  pull_request:
+    branches: [main]
+    paths: ['lab7/**']
+  workflow_dispatch:              # Manual trigger button on GitHub
+
+# ─── Pipeline ─────────────────────────────────────────────────────────────────
+jobs:
+  validate:
+    name: 🧪 Build & Validate Infrastructure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: lab7
+
+    steps:
+      # ── 1. Checkout code ──────────────────────────────────────────────────
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      # ── 2. Build all images ───────────────────────────────────────────────
+      - name: 🔨 Build Docker Images
+        run: docker compose build
+
+      # ── 3. Start topology ─────────────────────────────────────────────────
+      - name: 🚀 Start Enterprise Network Topology
+        run: |
+          docker compose up -d
+          echo "⏳ Waiting for all services to initialize..."
+          sleep 25
+
+      # ── 4. Health pre-check ───────────────────────────────────────────────
+      - name: 🩺 Container Health Pre-check
+        run: |
+          echo "=== Running Containers ==="
+          docker compose ps
+          echo ""
+          echo "=== Container Count ==="
+          RUNNING=$(docker compose ps --format json | python3 -c "
+          import sys, json
+          lines = sys.stdin.read().strip().split('\n')
+          count = sum(1 for l in lines if json.loads(l).get('State') == 'running')
+          print(count)
+          ")
+          echo "Running: $RUNNING / 15 expected"
+          if [ "$RUNNING" -lt 12 ]; then
+            echo "❌ Too few containers running"
+            docker compose logs --tail=10
+            exit 1
+          fi
+
+      # ── 5. OSPF convergence wait ──────────────────────────────────────────
+      - name: ⏳ Wait for OSPF Convergence
+        run: |
+          echo "Waiting for OSPF adjacencies to reach FULL state..."
+          for i in $(seq 1 12); do
+            OSPF=$(docker exec R1 vtysh -c "show ip ospf neighbor" 2>/dev/null)
+            if echo "$OSPF" | grep -q "Full"; then
+              echo "✅ OSPF adjacency FULL after ~$((i*5))s"
+              echo "$OSPF"
+              break
+            fi
+            echo "  Attempt $i/12 — waiting 5s..."
+            sleep 5
+          done
+
+      # ── 6. IPsec establishment wait ───────────────────────────────────────
+      - name: 🔐 Wait for IPsec Tunnel
+        run: |
+          echo "Waiting for IPsec IKEv2 tunnel to establish..."
+          for i in $(seq 1 10); do
+            IPSEC=$(docker exec R1 ipsec status 2>/dev/null)
+            if echo "$IPSEC" | grep -q "ESTABLISHED"; then
+              echo "✅ IPsec ESTABLISHED after ~$((i*3))s"
+              break
+            fi
+            echo "  Attempt $i/10 — waiting 3s..."
+            sleep 3
+          done
+
+      # ── 7. Run automated validation suite ─────────────────────────────────
+      - name: 🧪 Run 24-Point Validation Suite
+        id: test
+        run: python3 scripts/test_resiliency.py
+
+      # ── 8. Collect diagnostic logs on failure ─────────────────────────────
+      - name: 📋 Collect Diagnostics (on failure)
+        if: failure()
+        run: |
+          echo "=== Docker Compose Status ==="
+          docker compose ps
+          echo ""
+          echo "=== R1 OSPF ==="
+          docker exec R1 vtysh -c "show ip ospf neighbor" 2>/dev/null || true
+          echo ""
+          echo "=== R1 Routes ==="
+          docker exec R1 ip route 2>/dev/null || true
+          echo ""
+          echo "=== R1 VRRP/VIP ==="
+          docker exec R1 ip addr show 2>/dev/null | grep "172.20" || true
+          echo ""
+          echo "=== R1 IPsec ==="
+          docker exec R1 ipsec status 2>/dev/null || true
+          echo ""
+          echo "=== R1 iptables ==="
+          docker exec R1 iptables -t nat -L -n 2>/dev/null || true
+          echo ""
+          echo "=== Container Logs (last 15 lines each) ==="
+          for c in R1 R2 R3 LoadBalancer ServerA-1 ServerB; do
+            echo "--- $c ---"
+            docker logs "$c" 2>&1 | tail -15 || true
+          done
+
+      # ── 9. Cleanup ────────────────────────────────────────────────────────
+      - name: 🧹 Cleanup
+        if: always()
+        run: docker compose down -v --remove-orphans
