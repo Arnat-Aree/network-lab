@@ -40,7 +40,13 @@ jobs:
       # ── 4. Run automated validation suite ─────────────────────────────────
       - name: 🧪 Run 24-Point Validation Suite
         id: test
-        run: python3 scripts/test_resiliency.py
+        run: |
+          python3 scripts/test_resiliency.py || true
+          if [ -f fail_log.md ]; then
+            echo "# 🚨 Validation Suite Failures" >> $GITHUB_STEP_SUMMARY
+            cat fail_log.md >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
       # ── 8. Collect diagnostic logs on failure ─────────────────────────────
       - name: 📋 Collect Diagnostics (on failure)

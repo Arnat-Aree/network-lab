@@ -65,6 +65,8 @@ def print_test(tid, result, msg, detail=""):
         PASS_COUNT += 1
     else:
         FAIL_COUNT += 1
+        with open("fail_log.md", "a") as f:
+            f.write(f"### ❌ FAIL: [{tid}] {msg}\n**Error Details:** `{detail}`\n\n")
 
 # ─── PHASE 1: Infrastructure & Connectivity ───────────────────────────────────
 def test_infrastructure():
