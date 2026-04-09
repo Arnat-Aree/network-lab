@@ -101,10 +101,10 @@ def test_routing():
     print_header("PHASE 2: DYNAMIC ROUTING & HIGH AVAILABILITY")
 
     # OSPF
-    out, _ = run_cmd_retry("docker exec R1 vtysh -c 'show ip ospf neighbor'", retries=15, delay=4, expected_text="Full")
+    out, _ = run_cmd_retry("docker exec R1 vtysh -c 'show ip ospf neighbor'", retries=25, delay=4, expected_text="Full")
     print_test("O-10", "Full" in out, "OSPF Area 0 Adjacencies", f"Output: {out[:100]}" if "Full" not in out else "R1 sees neighbor as FULL")
 
-    out, _ = run_cmd_retry("docker exec R2 ip route", retries=15, delay=4, expected_text="172.20.10.0/24")
+    out, _ = run_cmd_retry("docker exec R2 ip route", retries=25, delay=4, expected_text="172.20.10.0/24")
     print_test("O-11", "172.20.10.0/24" in out or "172.20.30.0/24" in out,
                "Route Synchronization", f"Output: {out[:100]}" if "172.20.10.0/24" not in out else "R2 learned HQ subnets via OSPF")
 

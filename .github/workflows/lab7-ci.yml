@@ -34,8 +34,8 @@ jobs:
       - name: 🚀 Start Enterprise Network Topology
         run: |
           docker compose up -d
-          echo "⏳ Waiting for initial services to spin up..."
-          sleep 10
+          echo "⏳ Waiting for initial services to spin up and CPU load to settle (30s)..."
+          sleep 30
 
       # ── 4. Run automated validation suite ─────────────────────────────────
       - name: 🧪 Run 24-Point Validation Suite
