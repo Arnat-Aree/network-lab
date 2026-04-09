@@ -99,10 +99,10 @@ def test_routing():
     print_header("PHASE 2: DYNAMIC ROUTING & HIGH AVAILABILITY")
 
     # OSPF
-    out, _ = run_cmd("docker exec R1 vtysh -c 'show ip ospf neighbor'")
+    out, _ = run_cmd_retry("docker exec R1 vtysh -c 'show ip ospf neighbor'", retries=15, delay=4, expected_text="Full")
     print_test("O-10", "Full" in out, "OSPF Area 0 Adjacencies", "R1 sees neighbor as FULL")
 
-    out, _ = run_cmd("docker exec R2 ip route")
+    out, _ = run_cmd_retry("docker exec R2 ip route", retries=15, delay=4, expected_text="172.20.10.0/24")
     print_test("O-11", "172.20.10.0/24" in out or "172.20.30.0/24" in out,
                "Route Synchronization", "R2 learned HQ subnets via OSPF")
 
@@ -132,7 +132,7 @@ def _test_vrrp_failover():
     # Check service still accessible through R3
     svc_ok = False
     if vip_migrated:
-        out, code = run_cmd("docker exec ClientA curl -s --max-time 5 http://172.20.30.10")
+        out, code = run_cmd_retry("docker exec ClientA curl -s --max-time 5 http://172.20.30.10", retries=10, delay=3, expected_text="postgres_total_logs")
         svc_ok = '"postgres_total_logs"' in out
     print_test("V-15", svc_ok, "Failover: Service Recovery after Failover",
                "Load balancer reachable via R3 VIP" if svc_ok else "Service unreachable after failover")
@@ -148,17 +148,17 @@ def test_security_failover():
     print_header("PHASE 3: SECURITY, FAILOVER & PERSISTENCE")
 
     # IPsec
-    out, _ = run_cmd_retry("docker exec R1 ipsec status", retries=10, delay=3, expected_text="ESTABLISHED")
+    out, _ = run_cmd_retry("docker exec R1 ipsec status", retries=15, delay=4, expected_text="ESTABLISHED")
     print_test("S-16", "ESTABLISHED" in out, "IPsec Site-to-Site Tunnel",
                "Tunnel ESTABLISHED with Branch (R2)")
 
     # ESP encryption verified via XFRM
-    out, _ = run_cmd("docker exec R1 ip xfrm state")
+    out, _ = run_cmd_retry("docker exec R1 ip xfrm state", retries=10, delay=3, expected_text="esp")
     print_test("S-17", "esp" in out.lower(), "IPsec ESP Encryption",
                "XFRM state shows active ESP SAs" if "esp" in out.lower() else "No ESP state found")
 
     # Microservices
-    out, _ = run_cmd("docker exec ClientA curl -s --max-time 5 http://172.20.30.10")
+    out, _ = run_cmd_retry("docker exec ClientA curl -s --max-time 5 http://172.20.30.10", retries=12, delay=4, expected_text="postgres_total_logs")
     status = '"postgres_total_logs"' in out and '"server"' in out
     print_test("M-19", status, "Microservices Persistence I/O",
                "JSON has postgres_total_logs key" if status else f"Unexpected response: {out[:80]}")
