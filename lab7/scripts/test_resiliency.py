@@ -187,10 +187,17 @@ def test_observability():
                "Firewall Stateful Rules", "DNAT + MASQUERADE rules active")
 
     # Syslog aggregation
-    run_cmd('docker exec R1 sh -c "echo \\"<14> CI Test Log\\" | nc -u -w1 172.20.10.100 514" 2>/dev/null')
-    out, _ = run_cmd_retry("docker exec SyslogServer ls /var/log/central/", retries=5, delay=3, expected_text="central.log")
-    print_test("L-23", "central.log" in out, "Syslog Aggregation Active",
-               "central.log present on SyslogServer")
+    syslog_ok = False
+    for _ in range(15):
+        run_cmd('docker exec R1 sh -c "echo \\"<14> CI Test Log\\" | nc -u -w1 172.20.10.100 514" 2>/dev/null', timeout=2)
+        out, _ = run_cmd("docker exec SyslogServer ls /var/log/central/")
+        if "central.log" in out:
+            syslog_ok = True
+            break
+        time.sleep(3)
+        
+    print_test("L-23", syslog_ok, "Syslog Aggregation Active",
+               "central.log present on SyslogServer" if syslog_ok else "central.log not found. Daemon might be slow or dropped logs.")
 
     # Loki ingestion
     out, _ = run_cmd_retry("docker exec loki wget -qO- http://localhost:3100/ready", retries=15, delay=5, expected_text="ready")
