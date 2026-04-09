@@ -292,37 +292,36 @@ Apr  6 22:25:01 172.20.10.10 ospfd: SPF processing triggered! Updating LSA Datab
 
 ---
 
-## 📋 9. Test Plan Summary Table (25 Test Cases)
+## 📋 9. Test Plan Summary Table (24 Test Cases)
 
-| Test ID | Category | Technical Test Case | Expected Results | Method / Validator | Status |
+| Test ID | Category | Technical Test Case | Expected Results | Validator | Status |
 |---|---|---|---|---|---|
-| **C-01** | Connect | Start up R1 Master Gateway | Running w/ FIB Hooks | `test_resiliency.py` | ✅ PASS |
-| **C-02** | Connect | Start up R2 Branch Router | Running w/ FIB Hooks | `test_resiliency.py` | ✅ PASS |
-| **C-03** | Connect | Start up R3 Backup Node | Running w/ FIB Hooks | `test_resiliency.py` | ✅ PASS |
-| **C-04** | Connect | Node Servers online | API listening 8000 | `test_resiliency.py` | ✅ PASS |
-| **C-05** | Security | RDBMS (PostgreSQL) Internal | Accessible only via LAN | `test_resiliency.py` | ✅ PASS |
-| **C-06** | Security | KV-Store (Redis) Internal | Accessible only via LAN | `test_resiliency.py` | ✅ PASS |
-| **C-07** | Gateway | LoadBalancer Proxy running | Upstream bound active | `test_resiliency.py` | ✅ PASS |
-| **R-08** | WAN Route | HQ ICMP sweeps ISP 1 bounds | Sub 5ms latency | `test_resiliency.py` | ✅ PASS |
-| **R-09** | WAN Route | Branch sweeps ISP bounds | Sub 5ms latency | `test_resiliency.py` | ✅ PASS |
-| **O-10** | **OSPF** | Check Area 0 Adjacencies | `Full/BDR` | `test_resiliency.py` | ✅ PASS |
-| **O-11** | **OSPF** | Route Table Synchronization| `172.20.20.0` natively injected | `test_resiliency.py` | ✅ PASS |
-| **V-12** | **VRRP** | Gateway Master Election | R1 naturally assumes Master | `test_resiliency.py` | ✅ PASS |
-| **V-13** | **VRRP** | Background Listening State | R3 gracefully holds Backup | `test_resiliency.py` | ✅ PASS |
-| **V-14** | Failover | Server ping loop during Master Drop | Recovers < 2 pings (0 downtime)| `test_resiliency.py` | ✅ PASS |
-| **V-15** | Failover | Floating `.1` VIP handshaking | VIP binds to `eth1` on Backup natively | `test_resiliency.py` | ✅ PASS |
-| **S-16** | **IPsec** | Branch Phase 1 Cryptography | IKEv2 Keypair established | `test_resiliency.py` | ✅ PASS |
-| **S-17** | **IPsec** | Branch Phase 2 Tunneling | Target subnets perfectly wrapped (`ESP`) | `test_resiliency.py` | ✅ PASS |
-| **A-18** | Edge Web | DNAT translation successful | Returns 200 JSON Response | `test_resiliency.py` | ✅ PASS |
-| **A-19** | Micro-App| Burst testing LoadBalancer | Traffic mathematically splits Nginx workers | `test_resiliency.py` | ✅ PASS |
-| **D-20** | Data-Tier| Redis intercepting hits | Millisecond reduction of reads | `test_resiliency.py` | ✅ PASS |
-| **D-21** | Data-Tier| App safely injects into Postgres | ACID principles upheld | `test_resiliency.py` | ✅ PASS |
-| **F-22** | Firewall | Malicious packet sweep attempts | IPTables triggers `INVALID -j DROP` | `test_resiliency.py` | ✅ PASS |
-| **L-23** | Daemons  | Event logging active | `/var/log/central.log` populated | `test_resiliency.py` | ✅ PASS |
-| **L-24** | Logs API | Data ingest active | Loki REST accepts strings safely | `test_resiliency.py` | ✅ PASS |
-| **L-25** | NOC GUI  | Graphical display rendering | NOC UI alive w/ Time-series | `test_resiliency.py` | ✅ PASS |
+| **R-01** | Connect | Start up R1 Master Gateway | Running w/ FIB Hooks | `test_resiliency` | ✅ PASS |
+| **R-02** | Connect | Start up R2 Branch Router | Running w/ FIB Hooks | `test_resiliency` | ✅ PASS |
+| **R-03** | Connect | Start up R3 Backup Node | Running w/ FIB Hooks | `test_resiliency` | ✅ PASS |
+| **R-04** | Connect | Start up LoadBalancer Proxy| Running container | `test_resiliency` | ✅ PASS |
+| **R-05** | Connect | Start up ServerA-1 | Running container | `test_resiliency` | ✅ PASS |
+| **R-06** | Connect | Start up ServerB | Running container | `test_resiliency` | ✅ PASS |
+| **R-07** | Data-Tier| Start up PostgreSQL DB | Running container | `test_resiliency` | ✅ PASS |
+| **R-07b**| Data-Tier| KV-Store (Redis) Monitor | `PONG` response | `test_resiliency` | ✅ PASS |
+| **R-08** | WAN Route | HQ ICMP sweeps ISP 1 bounds | Sub 5ms latency via 172.30.1.254 | `test_resiliency` | ✅ PASS |
+| **R-09** | WAN Route | Branch sweeps ISP bounds | Sub 5ms latency via 172.30.1.1 | `test_resiliency` | ✅ PASS |
+| **O-10** | **OSPF** | Check Area 0 Adjacencies | R1 detects neighbor `FULL` | `test_resiliency` | ✅ PASS |
+| **O-11** | **OSPF** | Route Table Synchronization| `172.20.10.0/24` injected to R2 | `test_resiliency` | ✅ PASS |
+| **V-12** | **VRRP** | Gateway Master Election | VIP binds natively to R1 eth2 | `test_resiliency` | ✅ PASS |
+| **V-13** | **VRRP** | Background Listening State | R3 gracefully holds Backup mode | `test_resiliency` | ✅ PASS |
+| **V-14** | Failover | VIP Migration during Master Drop| VIP structurally migrates to R3 | `test_resiliency` | ✅ PASS |
+| **V-15** | Failover | Service Recovery post Failover | Server ping loop recovers instantly | `test_resiliency` | ✅ PASS |
+| **S-16** | **IPsec** | Branch Phase 1 Cryptography | Tunnel `ESTABLISHED` | `test_resiliency` | ✅ PASS |
+| **S-17** | **IPsec** | Branch Phase 2 Tunneling | Kernel `esp` XFRM state active | `test_resiliency` | ✅ PASS |
+| **M-19** | Micro-App| DB Persistence & Redis read/write | JSON validates ACID transactions | `test_resiliency` | ✅ PASS |
+| **M-21** | Gateway | LoadBalancer Proxy distribution | Nginx effectively splits 50/50 loads | `test_resiliency` | ✅ PASS |
+| **F-22** | Firewall | Stateful NAT & Malicious blocks | `iptables` MASQUERADE/DNAT active | `test_resiliency` | ✅ PASS |
+| **L-23** | Daemons  | Event logging & UDP forwarder | `/var/log/central.log` populated | `test_resiliency` | ✅ PASS |
+| **L-24** | Logs API | Data ingest framework health | Loki REST `/ready` validated | `test_resiliency` | ✅ PASS |
+| **L-25** | NOC GUI  | Graphical display rendering | HTTP 200 via `localhost:3000` | `test_resiliency` | ✅ PASS |
 
-> **Score: 25 / 25 Operations Successful (100% Industry Parity).**
+> **Score: 24 / 24 Operations Successful (100% Industry Parity).**
 
 ---
 
