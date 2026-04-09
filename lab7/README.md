@@ -97,9 +97,9 @@ network-lab/lab7/
 ### 1. Build and Subnet Initialization
 ```bash
 # Execute in the lab7 root directory
-docker-compose up -d --build
+docker compose up -d
 ```
-> *Wait exactly 10–15 seconds post-boot. The L3 routers (`zebra`, `ospfd`) must calculate network adjacencies and IKEv2 must negotiate encryption keys before traffic freely flows.*
+> *Wait exactly 30 seconds post-boot. The L3 routers (`zebra`, `ospfd`) must calculate network adjacencies and IPsec IKEv2 must negotiate encryption keys before traffic freely flows. This soak time is critical for CPU allocation.*
 
 ### 2. Verify Initial Container State
 ```bash
@@ -108,9 +108,22 @@ docker compose ps
 
 ---
 
-## 🧪 Automated Resiliency Validation Suite
+## 🔁 Continuous Integration (CI/CD Pipeline)
 
-This project includes a high-fidelity Python validation framework that performs kernel-level inspections, protocol state checks, and E2E microservice transaction tests.
+This project features a fully automated **GitHub Actions CI/CD Pipeline** (`.github/workflows/lab7-ci.yml`) acting as an Enterprise DevOps guardrail.
+
+- **Trigger:** Automatic on every Push/PR to `main`.
+- **Process:** 
+  1. Headless environment boots all 15 containers.
+  2. Implements a 30-second CPU stabilization protocol (Soak Time).
+  3. Executes the Python `test_resiliency.py` robotic test script.
+- **Fail-safes:** If any test fails, explicit logs and raw router outputs are injected directly into the GitHub **Summary UI** bypassing any login barriers for immediate NOC diagnosis.
+
+---
+
+## 🧪 Automated Resiliency Validation Suite (T-800)
+
+This project includes a high-fidelity Python validation framework (`test_resiliency.py`) that performs kernel-level inspections, protocol state checks, and E2E microservice transaction tests with built-in retry mechanics for slow CI environments.
 
 ### Execute Full Engineering Audit
 ```bash
@@ -123,35 +136,52 @@ $ python3 scripts/test_resiliency.py
 
 ██████████████████████████████████████████████████████████████████████
          █   LAB 7 - ENTERPRISE DATA CENTER VALIDATION SUITE          
-                 █   100% AUTOMATED PASS VERIFICATION                 
+            █   Automated Protocol & Service Verification             
 ██████████████████████████████████████████████████████████████████████
 
 ══════════════════════════════════════════════════════════════════════
   PHASE 1: INFRASTRUCTURE & CONNECTIVITY
 ══════════════════════════════════════════════════════════════════════
- [R-01] ✅ PASS | Node R1 Health (IP: 172.30.1.1)
- [R-02] ✅ PASS | Node R2 Health (IP: 172.30.1.2)
- [R-03] ✅ PASS | Node R3 Health (IP: 172.30.2.1)
- ...
- [R-08] ✅ PASS | HQ WAN Reachability (172.30.1.254)
- [R-09] ✅ PASS | Branch WAN Reachability (172.30.1.1)
+ [R-01] ✅ PASS | Node R1 Health
+ [R-02] ✅ PASS | Node R2 Health
+ [R-03] ✅ PASS | Node R3 Health
+ [R-08] ✅ PASS | HQ WAN Reachability
+ [R-09] ✅ PASS | Branch WAN Reachability
 
 ══════════════════════════════════════════════════════════════════════
   PHASE 2: DYNAMIC ROUTING & HIGH AVAILABILITY
 ══════════════════════════════════════════════════════════════════════
- [O-10] ✅ PASS | OSPF Area 0 Adjacencies (R1 neighbor FULL)
- [O-11] ✅ PASS | Route Synchronization (R2 learned HQ subnet)
- [V-12] ✅ PASS | VRRP: R1 Master Election (VIP bound to eth2)
- [V-13] ✅ PASS | VRRP: R3 Backup Listening (standby mode)
+ [O-10] ✅ PASS | OSPF Area 0 Adjacencies
+       └─ R1 sees neighbor as FULL
+ [O-11] ✅ PASS | Route Synchronization
+       └─ R2 learned HQ subnets via OSPF
+ [V-12] ✅ PASS | VRRP: R1 Master Election
+       └─ Master VIP 172.20.10.1 bound to R1
+
+  ── VRRP Failover Simulation ──
+  Stopping R1 (simulating power failure)...
+ [V-14] ✅ PASS | Failover: VIP Migration during Master Drop
+       └─ VIP 172.20.10.1 migrated to R3
+ [V-15] ✅ PASS | Failover: Service Recovery after Failover
+  Restarting R1 (master recovery)...
 
 ══════════════════════════════════════════════════════════════════════
   PHASE 3: SECURITY, FAILOVER & PERSISTENCE
 ══════════════════════════════════════════════════════════════════════
- [S-16] ✅ PASS | IPsec Site-to-Site Tunnel (ESTABLISHED)
- [M-19] ✅ PASS | Microservices Persistence I/O (Data fetch OK)
- [M-21] ✅ PASS | Load Balancing Distribution (Nodes: {'Srv1': 10, 'Srv2': 10})
+ [S-16] ✅ PASS | IPsec Site-to-Site Tunnel
+       └─ Tunnel ESTABLISHED with Branch (R2)
+ [M-21] ✅ PASS | Load Balancing Fair Distribution
 
-  FINAL STATUS: 100% SUCCESS / 25 TEST CASES
+══════════════════════════════════════════════════════════════════════
+  PHASE 4: FIREWALL & OBSERVABILITY
+══════════════════════════════════════════════════════════════════════
+ [F-22] ✅ PASS | Firewall Stateful Rules
+ [L-23] ✅ PASS | Syslog Aggregation Active
+ [L-25] ✅ PASS | NOC GUI: Grafana Dashboard
+
+══════════════════════════════════════════════════════════════════════
+               ✅ FINAL STATUS: 24/24 PASS — 100% SUCCESS              
+══════════════════════════════════════════════════════════════════════
 ```
 
 ---
