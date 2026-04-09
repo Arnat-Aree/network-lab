@@ -67,7 +67,7 @@ services:
         ipv4_address: 172.20.30.2
     volumes:
       - ./automation/R1:/automation
-      - ./config/R1:/etc/frr
+      - ./config/R1:/etc/frr_template
     command: /bin/sh -c "sh /automation/init.sh && tail -f /dev/null"
 
   R3:
@@ -86,7 +86,7 @@ services:
         ipv4_address: 172.20.30.3
     volumes:
       - ./automation/R3:/automation
-      - ./config/R3:/etc/frr
+      - ./config/R3:/etc/frr_template
     command: /bin/sh -c "sh /automation/init.sh && tail -f /dev/null"
 
   # ==========================================
@@ -106,7 +106,7 @@ services:
         ipv4_address: 172.20.20.1
     volumes:
       - ./automation/R2:/automation
-      - ./config/R2:/etc/frr
+      - ./config/R2:/etc/frr_template
     command: /bin/sh -c "sh /automation/init.sh && tail -f /dev/null"
 
   # ==========================================

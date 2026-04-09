@@ -5,6 +5,8 @@ ISP_IF=$(ip -4 -o addr | grep '172\.30\.2\.1/' | awk '{print $2}')
 LAN_A_IF=$(ip -4 -o addr | grep '172\.20\.10\.3/' | awk '{print $2}')
 DMZ_IF=$(ip -4 -o addr | grep '172\.20\.30\.3/' | awk '{print $2}')
 
+cp -a /etc/frr_template/. /etc/frr/
+
 sed -i "s/ISP_IF/$ISP_IF/g" /etc/frr/frr.conf
 sed -i "s/LAN_A_IF/$LAN_A_IF/g" /etc/frr/frr.conf
 sed -i "s/DMZ_IF/$DMZ_IF/g" /etc/frr/frr.conf
