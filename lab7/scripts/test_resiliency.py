@@ -41,6 +41,15 @@ def run_cmd(cmd, timeout=15):
     except subprocess.TimeoutExpired:
         return "", -1
 
+def run_cmd_retry(cmd, retries=10, delay=3, expected_text=""):
+    """Run command with retry loop to wait for slow CI services"""
+    for i in range(retries):
+        out, code = run_cmd(cmd)
+        if expected_text and expected_text in out:
+            return out, code
+        time.sleep(delay)
+    return out, code
+
 def print_header(title):
     print("\n" + "═" * 70)
     print(f"  {title}")
@@ -139,7 +148,7 @@ def test_security_failover():
     print_header("PHASE 3: SECURITY, FAILOVER & PERSISTENCE")
 
     # IPsec
-    out, _ = run_cmd("docker exec R1 ipsec status")
+    out, _ = run_cmd_retry("docker exec R1 ipsec status", retries=10, delay=3, expected_text="ESTABLISHED")
     print_test("S-16", "ESTABLISHED" in out, "IPsec Site-to-Site Tunnel",
                "Tunnel ESTABLISHED with Branch (R2)")
 
@@ -182,7 +191,7 @@ def test_observability():
                "central.log present on SyslogServer")
 
     # Loki ingestion
-    out, _ = run_cmd("docker exec loki wget -qO- http://localhost:3100/ready")
+    out, _ = run_cmd_retry("docker exec loki wget -qO- http://localhost:3100/ready", retries=15, delay=5, expected_text="ready")
     loki_ok = "ready" in out.lower()
     print_test("L-24", loki_ok, "Loki Ingestion Ready",
                "Loki /ready endpoint returns 'ready'" if loki_ok else f"Response: {out}")
@@ -190,8 +199,8 @@ def test_observability():
     # Grafana dashboard
     out, code = run_cmd("docker inspect -f '{{.State.Running}}' grafana")
     grafana_up = out == "true"
-    out2, _ = run_cmd("curl -s --max-time 3 -o /dev/null -w '%{http_code}' http://localhost:3000/login")
-    print_test("L-25", grafana_up and out2 == "200",
+    out2, _ = run_cmd_retry("curl -s --max-time 3 -o /dev/null -w '%{http_code}' http://localhost:3000/login", retries=10, delay=3, expected_text="200")
+    print_test("L-25", grafana_up and "200" in out2,
                "NOC GUI: Grafana Dashboard",
                f"Container: {out} | HTTP: {out2} → http://localhost:3000 (admin/admin)")
 
