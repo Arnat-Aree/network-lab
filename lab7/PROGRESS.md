@@ -279,8 +279,20 @@ bash scripts/demo_failover.sh
   - ดันโค้ดนั้นขึ้นแทรกใน `GITHUB_STEP_SUMMARY` ทำให้ผู้ใช้สามารถอ่าน Error ของ Network ได้จากหน้า UI ส่วนหน้าสุด โดยที่ไม่ต้อง Login หรือมีสิทธิ์ Admin ใน GitHub!
 - **ผลสุดท้าย: 24/24 PASS — 100% SUCCESS อย่างสมบูรณ์และเสถียรบน GitHub Actions**
 
+### Session 9 — 2026-04-09 (Peer AI Audit & Live Verification) 🛡️ รอยรั่วถูกปิดกั้นสมบูรณ์
+- **Peer AI System Audit (ตาแหลมคมขีดสุด):** 
+  - สแกนพบจุดบอดสำคัญใน `config/R1/frr.conf` และ `R3` ที่ระบบยังมี Hardcode `interface eth1` ค้างอยู่ (ความเสี่ยง: หาก CI/CD Docker สลับลำดับ Interface, OSPF อาจล่ม) — แก้ไขโดยการใช้ตัวแปร `ISP_IF` เต็มรูปแบบ
+  - สแกนพบ Daemons FRR รันคำสั่ง `vrrpd=yes` ตีคู่กับ `Keepalived` — ทำการปิดโดยสมบูรณ์ (`vrrpd=no`) เพื่อป้องการเกิด Split-brain และ MAC address collision
+  - ยืนยันการทำงานของ `promtail-config.yml` และ File Descriptor ของ Loki ว่า Image `grafana/loki:2.9.1` ถูกตั้งค่ามาปลอดภัยและเชื่อมต่อได้สมบูรณ์ในแวดล้อม CI.
+- **สกัดกั้นการแครชของ Node แบบถาวร (The Git Mutation Bug):** 
+  - พบปัญหาใหญ่: สคริปต์ `init.sh` ที่รัน `sed -i` ทับไฟล์ภายใต้เทคนิค Bind-Mount `volumes: ./config/R1:/etc/frr` จะส่งผลให้ไฟล์ `frr.conf` ฉบับ Repository จริงบนเครื่อง Host/Git ถูกดัดแปลงแบบถาวร! (นำมาสู่การล้มเหลวเวลารันครั้งที่ 2)
+  - **สร้างสถาปัตยกรรม Overlay ชั่วคราว:** สลับไปเมานท์ Read-only ลอกเป็นแม่พิมพ์ไว้ที่ `/etc/frr_template` ก่อนให้ `init.sh` โคลนตัวเองลงแรม `/etc/frr` แล้วค่อยใช้ `sed` แก้ไขเฉพาะก้อนในหน่วยความจำ — คุ้มครองไฟล์ Git ให้บริสุทธิ์ตลอดกาล! 
+- **ยิงบอทเข้าไปถ่ายรูป Grafana (Browser Agent Operation):**
+  - ใช้ AI Browser Subagent ไชทะลุเข้าไปกดข้ามรหัสผ่าน `admin/admin` 
+  - ดึงภาพหลักฐานหน้าตา NOC Dashboard `Enterprise Network Visualization` ที่กำลัง Live สดดักจับ OSPF/IPsec Event ผสานกับ Loki Streaming จนสำเร็จ! และทำเป็น WebP Animation ฝังหน้า README!
+
 ---
 
-> **Last updated:** 2026-04-09 10:25 ICT  
-> **Last session result:** ✅ CI/CD Pipeline 100% Stabilized  
+> **Last updated:** 2026-04-09 12:45 ICT  
+> **Last session result:** ✅ Config Data-Protection and Graphical Verification Completed  
 > **Project status:** ✅ สมบูรณ์ทุกด้าน + CI/CD ไร้บั๊ก เสถียรพร้อมส่งมอบ
