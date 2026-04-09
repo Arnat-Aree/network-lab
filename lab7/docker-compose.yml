@@ -174,7 +174,8 @@ services:
     command: /bin/sh -c "ip route replace default via 172.20.10.1 && redis-server"
 
   SyslogServer:
-    image: alpine:latest
+    build:
+      context: ./automation/Syslog
     container_name: SyslogServer
     cap_add: [NET_ADMIN]
     networks:
@@ -183,7 +184,7 @@ services:
     volumes:
       - ./automation/Syslog/rsyslog.conf:/etc/rsyslog.conf
       - syslog_data:/var/log/central
-    command: /bin/sh -c "ip route replace default via 172.20.10.1 && apk add --no-cache rsyslog && mkdir -p /var/log/central && rsyslogd -n"
+    command: /bin/sh -c "ip route replace default via 172.20.10.1 && mkdir -p /var/log/central && rsyslogd -n"
 
   loki:
     image: grafana/loki:2.9.1

@@ -102,11 +102,11 @@ def test_routing():
 
     # OSPF
     out, _ = run_cmd_retry("docker exec R1 vtysh -c 'show ip ospf neighbor'", retries=15, delay=4, expected_text="Full")
-    print_test("O-10", "Full" in out, "OSPF Area 0 Adjacencies", "R1 sees neighbor as FULL")
+    print_test("O-10", "Full" in out, "OSPF Area 0 Adjacencies", f"Output: {out[:100]}" if "Full" not in out else "R1 sees neighbor as FULL")
 
     out, _ = run_cmd_retry("docker exec R2 ip route", retries=15, delay=4, expected_text="172.20.10.0/24")
     print_test("O-11", "172.20.10.0/24" in out or "172.20.30.0/24" in out,
-               "Route Synchronization", "R2 learned HQ subnets via OSPF")
+               "Route Synchronization", f"Output: {out[:100]}" if "172.20.10.0/24" not in out else "R2 learned HQ subnets via OSPF")
 
     # VRRP before failover
     r1_vrrp, _ = run_cmd_retry("docker exec R1 ip addr show | grep '172.20.10.1'", retries=10, delay=3, expected_text="172.20.10.1")
@@ -197,7 +197,7 @@ def test_observability():
         time.sleep(3)
         
     print_test("L-23", syslog_ok, "Syslog Aggregation Active",
-               "central.log present on SyslogServer" if syslog_ok else "central.log not found. Daemon might be slow or dropped logs.")
+               "central.log present on SyslogServer" if syslog_ok else f"ls output: {out[:80]}")
 
     # Loki ingestion
     out, _ = run_cmd_retry("docker exec loki wget -qO- http://localhost:3100/ready", retries=15, delay=5, expected_text="ready")
