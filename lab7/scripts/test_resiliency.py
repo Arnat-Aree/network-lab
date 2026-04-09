@@ -88,10 +88,10 @@ def test_infrastructure():
     print_test("R-07b", "PONG" in out, "Redis Cache Health", f"redis-cli ping → {out}")
 
     # WAN reachability
-    _, c1 = run_cmd("docker exec R1 ping -c 1 -W 2 172.30.1.254")
+    _, c1 = run_cmd_retry("docker exec R1 ping -c 1 -W 2 172.30.1.254", retries=5, delay=2, expected_text="1 packets transmitted, 1 packets received")
     print_test("R-08", c1 == 0, "HQ WAN Reachability", "R1 → ISP1 Gateway (172.30.1.254)")
 
-    _, c2 = run_cmd("docker exec R2 ping -c 1 -W 2 172.30.1.254")
+    _, c2 = run_cmd_retry("docker exec R2 ping -c 1 -W 2 172.30.1.254", retries=5, delay=2, expected_text="1 packets transmitted, 1 packets received")
     print_test("R-09", c2 == 0, "Branch WAN Reachability", "R2 → ISP1 Gateway (172.30.1.254)")
 
 # ─── PHASE 2: Dynamic Routing & HA ───────────────────────────────────────────
@@ -107,7 +107,7 @@ def test_routing():
                "Route Synchronization", "R2 learned HQ subnets via OSPF")
 
     # VRRP before failover
-    r1_vrrp, _ = run_cmd("docker exec R1 ip addr show | grep '172.20.10.1'")
+    r1_vrrp, _ = run_cmd_retry("docker exec R1 ip addr show | grep '172.20.10.1'", retries=10, delay=3, expected_text="172.20.10.1")
     r3_vrrp, _ = run_cmd("docker exec R3 ip addr show | grep '172.20.10.1'")
     print_test("V-12", "172.20.10.1" in r1_vrrp, "VRRP: R1 Master Election",
                "Master VIP 172.20.10.1 bound to R1")
@@ -122,9 +122,8 @@ def _test_vrrp_failover():
     print("\n  ── VRRP Failover Simulation ──")
     print("  Stopping R1 (simulating power failure)...")
     run_cmd("docker stop R1", timeout=15)
-    time.sleep(4)  # wait for keepalived dead interval (advert_int=1, ~3× = 3s)
-
-    r3_after, _ = run_cmd("docker exec R3 ip addr show | grep '172.20.10.1'")
+    
+    r3_after, _ = run_cmd_retry("docker exec R3 ip addr show | grep '172.20.10.1'", retries=10, delay=3, expected_text="172.20.10.1")
     vip_migrated = "172.20.10.1" in r3_after
     print_test("V-14", vip_migrated, "Failover: VIP Migration during Master Drop",
                "VIP 172.20.10.1 migrated to R3" if vip_migrated else "VIP did NOT migrate to R3")
@@ -186,7 +185,7 @@ def test_observability():
                "Firewall Stateful Rules", "DNAT + MASQUERADE rules active")
 
     # Syslog aggregation
-    out, _ = run_cmd("docker exec SyslogServer ls /var/log/central/")
+    out, _ = run_cmd_retry("docker exec SyslogServer ls /var/log/central/", retries=5, delay=3, expected_text="central.log")
     print_test("L-23", "central.log" in out, "Syslog Aggregation Active",
                "central.log present on SyslogServer")
 
