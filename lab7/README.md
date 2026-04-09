@@ -200,6 +200,11 @@ $ python3 scripts/test_resiliency.py
 
 ## 🌐 Endpoints & Dashboards
 
+### Live Operational View (NOC Dashboard)
+The entire Enterprise Network is visualized natively using Grafana. An observability stack (Loki/Promtail) intercepts hardware syslogs and real-time IPsec/OSPF states, streaming them into a beautiful, centralized monitoring interface.
+
+![Grafana NOC Live Demo](assets/grafana_demo.webp)
+
 | Service Endpoint | Target Output |
 |------------------|---------------|
 | `http://localhost:80/` | Proxies natively into API tier demonstrating round-robin distributions via NGINX. |
