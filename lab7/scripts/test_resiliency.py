@@ -187,7 +187,7 @@ def test_observability():
                "Firewall Stateful Rules", "DNAT + MASQUERADE rules active")
 
     # Syslog aggregation
-    run_cmd('docker exec R1 sh -c "echo \\"<14> CI Test Log\\" | nc -u -w1 172.20.10.15 514" 2>/dev/null')
+    run_cmd('docker exec R1 sh -c "echo \\"<14> CI Test Log\\" | nc -u -w1 172.20.10.100 514" 2>/dev/null')
     out, _ = run_cmd_retry("docker exec SyslogServer ls /var/log/central/", retries=5, delay=3, expected_text="central.log")
     print_test("L-23", "central.log" in out, "Syslog Aggregation Active",
                "central.log present on SyslogServer")
