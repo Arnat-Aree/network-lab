@@ -2,7 +2,6 @@
 ### True Layer 3/Layer 4 Emulation (FRR, VRRP, IPsec, Multi-ISP) 
 > **Course:** Computer Networks & Microservices Architecture  
 > **Lab:** 7 — Replacing Packet Tracer with Core Linux-Kernel Networking  
-> **Date:** 2026-04-07  
 
 ---
 
@@ -15,20 +14,21 @@
 6. [Automated Resiliency Test Results](#-6-automated-resiliency-test-results)
 7. [Hardware Failover Simulation Output](#-7-hardware-failover-simulation-output)
 8. [Observability & Native Logging Stack](#-8-observability--native-logging-stack)
-9. [Test Plan Summary Table (25 Test Cases)](#-9-test-plan-summary-table-25-test-cases)
+9. [Test Plan Summary Table (24 Test Cases)](#-9-test-plan-summary-table-24-test-cases)
 10. [Key Endpoints & Diagnostics](#-10-key-endpoints--diagnostics)
+11. [Continuous Integration & DevOps Validation](#-11-continuous-integration--devops-validation-cicd)
 
 ---
 
 ## 🎯 1. Core Objectives & Comparisons
 
-Unlike generalized microservice labs that simply bridge containers, this project achieves **True Network Infrastructure Emulation**. We simulate Cisco-grade physical configurations injecting into Linux Kernels directly.
+Unlike generalized microservice labs that simply bridge containers at Layer 7, this project achieves **True Network Infrastructure Emulation**. We simulate Cisco-grade physical configurations injecting into Linux Kernels directly.
 
 | # | Enterprise Objective | Network Engineering Approach |
 |---|----------------------|------------------------------|
 | 1 | **Physical Router Emulation** | Alpine Linux modifying Kernel FIBs via `zebra` daemons. |
 | 2 | **Dynamic Route Discovery** | **FRRouting (OSPF)** implemented. Bypassed static routes for autonomous adjacencies. |
-| 3 | **Gateway High-Availability** | Native **VRRP** (Priority 200 vs 100) for instant IP migration upon hardware failure. |
+| 3 | **Gateway High-Availability** | Native **VRRP (Keepalived)** (Priority 200 vs 100) for instant IP migration upon hardware failure. |
 | 4 | **Branch Site-to-Site Encrypted VPN** | **StrongSwan (IPsec IKEv2)** encapsulating private subnets across simulated untrusted ISPs. |
 | 5 | **Stateful Edge Firewalling** | `iptables` processing `PREROUTING / DNAT` and filtering malformed external TCP packets. |
 | 6 | **Centralized NOC Observability** | **Rsyslog** piping C-level protocol events directly into **Loki + Promtail + Grafana**. |
@@ -96,9 +96,9 @@ network-lab/lab7/
 │   ├── 📂 ClientA/                ← VPN Validation Request Node
 │   ├── 📂 LoadBalancer/           ← Nginx upstream distribution maps
 │   ├── 📂 Observability/          ← Grafana GUI specs & Promtail shippers
-│   ├── 📂 R1/                     ← Branch 1 Router (IPsec / Firewall INIT logic)
+│   ├── 📂 R1/                     ← Branch 1 Router (IPsec / Firewall / Master VRRP)
 │   ├── 📂 R2/                     ← Branch 2 Router (IPsec Return Paths)
-│   ├── 📂 R3/                     ← HA Backup Gateway
+│   ├── 📂 R3/                     ← HA Backup Gateway (Backup VRRP)
 │   ├── 📂 ServerA/                ← Web APIs handling Database transactions
 │   ├── 📂 ServerB/                ← Remote Branch API
 │   └── 📂 Syslog/                 ← Aggregation hub for OSPF/IPsec Daemon logs
@@ -166,6 +166,8 @@ conn branch
 ```
 
 ### 3. Dynamic FRR Subnet Routing (`frr.conf`)
+We eliminated problematic hardcoded interfaces, relying instead on environment variable `[ISP_IF]` overlays to prevent CI execution drift.
+
 ```text
 router ospf
  ospf router-id 1.1.1.1
@@ -178,7 +180,7 @@ router ospf
 
 ## 🧪 6. Automated Resiliency Test Results (T-800 Script)
 
-We trigger a heavy python framework simulating thousands of HTTP and Protocol verifications.
+We trigger a heavy python framework simulating thousands of HTTP and Protocol verifications directly into the architecture.
 
 ```text
 $ python3 scripts/test_resiliency.py
@@ -335,7 +337,6 @@ Apr  6 22:25:01 172.20.10.10 ospfd: SPF processing triggered! Updating LSA Datab
 | **Global NOC Observation** | `http://localhost:3000/` | Grafana Administrative Log Portal (Login: `admin` / `admin`). |
 
 ---
-*Laboratory infrastructure far exceeds pure microservice deployments by achieving rigorous Layer 3 network emulation standards natively combined with modern, high-tier CI/CD testing elements.*
 
 ## ⚙️ 11. Continuous Integration & DevOps Validation (CI/CD)
 
@@ -346,9 +347,9 @@ Whenever engineers push configurations to the `main` branch, the pipeline execut
 
 1. **Topological Spin-up:** 15 containers dynamically orchestrate, initiating `zebra`, `ospfd`, `keepalived`, and `strongswan` daemons.
 2. **CPU Soak Time Protection:** Because CI environments (like Azure VMs) suffer heavily from CPU starvation compared to physical data centers, a rigid **30-second initialization boundary** is enforced. This prohibits the automated validation suite from initiating ping floods or API sweeps until the daemons complete their internal cryptographic calculations (IKEv2) and synchronize their Link-State databases.
-3. **Headless Execution:** The Python Validation Suite (which governs all 24 points aforementioned) systematically attacks the infrastructure from different subnets analyzing IP route tables via kernel-level `ip route` and `ip xfrm state`.
+3. **Template Overlays:** To prevent Git mutation from nested `sed` commands tracking host-mapped configurations, an `/etc/frr_template` array is invoked to maintain CI parity.
 4. **Resilience Mechanisms:** Should a UDP Syslog packet arrive prior to the `rsyslogd` opening its listening ports, the Python framework implements auto-retrying deterministic packet injection, guaranteeing log captures are recorded.
 5. **Direct Notification Hooks:** Failed validations bypass proprietary CI portals and inject exact terminal traces (e.g., specific missing routes) directly into the front-end Markdown summary, slashing debugging horizons.
 
 ---
-*End of Protocol Report.*
+*End of Engineering Protocol Report.*
